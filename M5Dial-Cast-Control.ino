@@ -18,7 +18,10 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 #include "ArduCastControl.h"
-#include "M5Dial.h"
+#include <M5Dial.h>
+#include <WiFi.h>
+
+#include "SECRETS.h"
 
 //#define B_SELECT D5
 //#define B_LEFT D6
@@ -38,11 +41,27 @@ void setup()
     Serial.begin(115200);
     Serial.println("booted");
 
+    auto cfg = M5.config();
+    M5Dial.begin(cfg, true, false);
+    M5Dial.Display.clear();
+
+    M5Dial.Display.print("WiFi:");
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.print('.');
+        delay(500);
+    }
+    Serial.println("\r\n WiFi Connected.");
+    M5Dial.Display.print("Connected.");
+
     ArduinoOTA.setHostname("chromecastremote");
     ArduinoOTA.begin();
 
-    auto cfg = M5.config();
-    M5Dial.begin(cfg, true, false);
+    M5Dial.Display.clear();
+    M5Dial.Display.setTextColor(WHITE);
+    M5Dial.Display.setTextDatum(middle_center);
+    M5Dial.Display.setTextFont(&fonts::Orbitron_Light_32);
+    M5Dial.Display.setTextSize(2);
 
     //pinMode(D8, OUTPUT); // common pin for keys, used for pulldown - should have a pulldown anyway
     //pinMode(B_SELECT, INPUT_PULLUP);
@@ -120,7 +139,11 @@ void loop()
 
         if (!bSelectPressed && prevSelect)
         { // select released
+            M5Dial.Speaker.tone(2000, 20);
             cc.pause(true);
+            M5Dial.Display.drawString("Paused",
+                                  M5Dial.Display.width() / 2,
+                                  M5Dial.Display.height() / 2);
         }
 
         /*
@@ -135,11 +158,22 @@ void loop()
         }
         */
 
+       if (M5Dial.BtnA.pressedFor(1000)) // 1s
+       {
+            M5Dial.Speaker.tone(6000, 20);
+            cc.next();
+            M5Dial.Display.drawString("Next",
+                                  M5Dial.Display.width() / 2,
+                                  M5Dial.Display.height() / 2);
+       }
+
         if (newEncoderPosition != oldEncoderPosition && currentVolume != -1) // -1 means nothing reported
         {
+            float newVolume;
             if (newEncoderPosition > oldEncoderPosition)
             {
-                float newVolume = currentVolume + 0.05;
+                M5Dial.Speaker.tone(7000, 20);
+                newVolume = currentVolume + 0.05;
                 if (newVolume > 1)
                 {
                     newVolume = 1;
@@ -148,7 +182,8 @@ void loop()
             }
             else
             {
-                float newVolume = currentVolume - 0.05;
+                M5Dial.Speaker.tone(5000, 20);
+                newVolume = currentVolume - 0.05;
                 if (newVolume < 0)
                 {
                     newVolume = 0;
@@ -156,6 +191,9 @@ void loop()
                 cc.setVolume(newVolume);
             }
             oldEncoderPosition = newEncoderPosition;
+            M5Dial.Display.drawString(String(newVolume),
+                                  M5Dial.Display.width() / 2,
+                                  M5Dial.Display.height() / 2);
         }
 
         bLastUpdated = millis();
