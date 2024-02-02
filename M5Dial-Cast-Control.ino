@@ -69,11 +69,29 @@ void setup()
     //pinMode(B_RIGHT, INPUT_PULLUP);
 }
 
+uint32_t lastScreenUpdate = 0;
+uint32_t screenUpatePeriod = 2000;
+bool screenUpdated = true;
+void clearDisplayAfterDelay()
+{
+    if (screenUpdated)
+    {
+        uint32_t now = millis()
+        if (lastScreenUpdate + now > screenUpdatePeriod)
+        {
+            M5Dial.Display.clear();
+            screenUpdated = false;
+        }
+    }
+}
+
 uint32_t lastUpdated = 0;
 uint32_t updatePeriod = 5000; // 5s
 
 uint32_t bLastUpdated = 0;
 uint32_t bUpdatePeriod = 25; // 25ms
+
+uint32_t now;
 
 void loop()
 {
@@ -125,18 +143,80 @@ void loop()
         Serial.println(currentVolume);
         Serial.println((int) (currentVolume * 20));
 
-        bool prevSelect = bSelectPressed;
+        //bool prevSelect = bSelectPressed;
         //bool prevLeft = bLeftPressed;
         //bool prevRight = bRightPressed;
 
         //bSelectPressed = digitalRead(B_SELECT) == LOW;
-        bSelectPressed = M5Dial.BtnA.wasPressed();
+        //bSelectPressed = M5Dial.BtnA.wasPressed();
         //bRightPressed = digitalRead(B_RIGHT) == LOW;
         //bLeftPressed = digitalRead(B_LEFT) == LOW;
 
         long newEncoderPosition = M5Dial.Encoder.read();
         Serial.println(newEncoderPosition);
 
+        /*
+        if (M5Dial.BtnA.wasReleased()
+        {
+            if (M5Dial.BtnA.pressedFor(2000)
+            {
+                M5Dial.Speaker.tone(6000, 20);
+                cc.prev();
+                M5Dial.Display.drawString("Previous",
+                                  M5Dial.Display.width() / 2,
+                                  M5Dial.Display.height() / 2);
+            }
+            else if (M5Dial.BtnA.pressedFor(1000, 2000)
+            {
+                M5Dial.Speaker.tone(6000, 20);
+                cc.next();
+                M5Dial.Display.drawString("Next",
+                                  M5Dial.Display.width() / 2,
+                                  M5Dial.Display.height() / 2);
+            }
+            else
+            {
+                M5Dial.Speaker.tone(2000, 20);
+                cc.pause(true);
+                M5Dial.Display.drawString("Paused",
+                                  M5Dial.Display.width() / 2,
+                                  M5Dial.Display.height() / 2);
+            }
+        }
+        */
+        
+        if (M5Dial.BtnA.wasPressed())
+        {
+            M5Dial.Speaker.tone(2000, 20);
+            cc.pause(true);
+            M5Dial.Display.clear();
+            M5Dial.Display.drawString("Paised",
+                              M5Dial.Display.width() / 2,
+                              M5Dial.Display.height() / 2);
+            screenUpdated = true;
+        }
+        if (M5Dial.BtnA.pressedFor(1000, 2000))
+        {
+            M5Dial.Speaker.tone(6000, 20);
+            cc.next();
+            M5Dial.Display.clear();
+            M5Dial.Display.drawString("Next",
+                              M5Dial.Display.width() / 2,
+                              M5Dial.Display.height() / 2);
+            screenUpdated = true;
+        }
+        if (M5Dial.BtnA.pressedFor(2000))
+        {
+            M5Dial.Speaker.tone(6000, 20);
+            cc.prev();
+            M5Dial.Display.clear();
+            M5Dial.Display.drawString("Previous",
+                              M5Dial.Display.width() / 2,
+                              M5Dial.Display.height() / 2);
+            screenUpdated = true;
+        }
+
+        /*
         if (!bSelectPressed && prevSelect)
         { // select released
             M5Dial.Speaker.tone(2000, 20);
@@ -145,6 +225,7 @@ void loop()
                                   M5Dial.Display.width() / 2,
                                   M5Dial.Display.height() / 2);
         }
+        */
 
         /*
         if (!bLeftPressed && prevLeft)
@@ -158,14 +239,16 @@ void loop()
         }
         */
 
-       if (M5Dial.BtnA.pressedFor(1000)) // 1s
-       {
+        /*
+        if (M5Dial.BtnA.pressedFor(1000)) // 1s
+        {
             M5Dial.Speaker.tone(6000, 20);
             cc.next();
             M5Dial.Display.drawString("Next",
                                   M5Dial.Display.width() / 2,
                                   M5Dial.Display.height() / 2);
-       }
+        }
+        */
 
         if (newEncoderPosition != oldEncoderPosition && currentVolume != -1) // -1 means nothing reported
         {
@@ -191,11 +274,21 @@ void loop()
                 cc.setVolume(newVolume);
             }
             oldEncoderPosition = newEncoderPosition;
+            M5Dial.Display.clear();
             M5Dial.Display.drawString(String(newVolume),
                                   M5Dial.Display.width() / 2,
                                   M5Dial.Display.height() / 2);
+            screenUpdated = true;
         }
 
         bLastUpdated = millis();
+        now = millis()
+
+        // clear screen (if updated) after a delay
+        if (screenUpdated && now - lastScreenUpdate > screenUpdatePeriod)
+        {
+                M5Dial.Display.clear();
+                screenUpdated = false;
+        }
     }
 }
