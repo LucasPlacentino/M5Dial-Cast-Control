@@ -256,29 +256,37 @@ void loop()
             if (newEncoderPosition > oldEncoderPosition)
             {
                 M5Dial.Speaker.tone(7000, 20);
+                /*
                 newVolume = currentVolume + 0.05;
                 if (newVolume > 1)
                 {
                     newVolume = 1;
                 }
                 cc.setVolume(newVolume);
+                */
+                cc.setVolume(true, 0.05); // relative volume
             }
             else
             {
                 M5Dial.Speaker.tone(5000, 20);
+                /*
                 newVolume = currentVolume - 0.05;
                 if (newVolume < 0)
                 {
                     newVolume = 0;
                 }
                 cc.setVolume(newVolume);
+                */
+                cc.setVolume(true, -0.05); // relative volume
             }
             oldEncoderPosition = newEncoderPosition;
+            /*
             M5Dial.Display.clear();
             M5Dial.Display.drawString(String(newVolume),
                                   M5Dial.Display.width() / 2,
                                   M5Dial.Display.height() / 2);
             screenUpdated = true;
+            */
         }
 
         bLastUpdated = millis();
